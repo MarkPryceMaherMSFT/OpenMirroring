@@ -200,7 +200,7 @@ namespace ExcelDemo
             // this is a cheat, I could not get the rest api to work, copying files to onelake, so I fell back to using AZCOPY
 
             //var ps1File = @"C:\temp\di\OpenMirroring\ExcelDemo\./copy_files_tmp.ps1";
-            var ps1File = @"C:\temp\di\OpenMirroring\ExcelDemo\copy_files_tmp.ps1";
+            var ps1File = $"{config.azcopyFolder}\\copy_files_tmp.ps1";
 
             StringBuilder psScript = new StringBuilder();
             psScript.AppendLine($"$env:AZCOPY_AUTO_LOGIN_TYPE = \"SPN\";\r\n");
@@ -208,7 +208,7 @@ namespace ExcelDemo
             psScript.AppendLine($"$env:AZCOPY_SPA_CLIENT_SECRET = \"{config.SPN_Secret}\";\r\n");
             psScript.AppendLine($"$env:AZCOPY_TENANT_ID = \"{config.SPN_Tenant_ID}\";\r\n");
             psScript.AppendLine($"$env:AZCOPY_PATH = \"{config.azcopyPath}\"");
-            psScript.AppendLine($"{config.azcopyPath} copy \"{config.outputFolder}*\" \"{config.MirrorLandingZone}\" --overwrite=true --from-to=LocalBlob --blob-type Detect --follow-symlinks --check-length=true --put-md5 --follow-symlinks --disable-auto-decoding=false  --recursive --trusted-microsoft-suffixes=onelake.blob.fabric.microsoft.com --log-level=INFO;\r\n");
+            psScript.AppendLine($"{config.azcopyPath} copy \"{config.outputFolder}\\*\" \"{config.MirrorLandingZone.Replace(".dfs.",".blob.")}\" --overwrite=true --from-to=LocalBlob --blob-type Detect --follow-symlinks --check-length=true --put-md5 --follow-symlinks --disable-auto-decoding=false  --recursive --trusted-microsoft-suffixes=onelake.blob.fabric.microsoft.com --log-level=INFO;\r\n");
 
             File.WriteAllText(ps1File, psScript.ToString());
 
@@ -221,7 +221,7 @@ namespace ExcelDemo
             Process.Start(startInfo);
 
             Thread.Sleep(500);
-            File.Delete(ps1File);
+            //File.Delete(ps1File);
 
         }
     }

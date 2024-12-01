@@ -10,83 +10,94 @@ namespace ExcelDemo
         static public SimpleCache<string, DataTable> cache = new SimpleCache<string, DataTable>(TimeSpan.FromHours(10));
         static public void ConvertExcelToDatatable(string filePathtoExcel, AppConfig config)
         {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-
-            string fileName = Path.GetFileName(filePathtoExcel);
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
-
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
-            using (var package = new ExcelPackage(new FileInfo(filePathtoExcel)))
+            try
             {
-                foreach (var worksheet in package.Workbook.Worksheets)
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+                string fileName = Path.GetFileName(filePathtoExcel);
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+
+                ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+                using (var package = new ExcelPackage(new FileInfo(filePathtoExcel)))
                 {
-                    Console.WriteLine($"Exporting worksheet: {worksheet.Name}");
-
-                    var table = new DataTable();
-
-                    table.Columns.Add($"__rowMarker__", typeof(int));
-                    table.Columns.Add($"_id_", typeof(int));
-
-                    int rowCount = worksheet.Dimension.Rows;
-                    int colCount = worksheet.Dimension.Columns;
-
-                    string v = "";
-                    for (int i = 1; i <= colCount; i++)
+                    foreach (var worksheet in package.Workbook.Worksheets)
                     {
-                        try
-                        {
-                            v = worksheet.Cells[1, i]?.Text ?? "";
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex.Message);
-                        }
-                        table.Columns.Add($"{v}", typeof(string));
-                    }
+                        Console.WriteLine($"Exporting worksheet: {worksheet.Name}");
 
-                    List<String> foo = new List<String>();
+                        var table = new DataTable();
 
-                    object[] rowVals = new object[colCount + 2];
+                        table.Columns.Add($"__rowMarker__", typeof(int));
+                        table.Columns.Add($"_id_", typeof(int));
 
-                    for (int row = 2; row <= rowCount; row++)
-                    {
-                        rowVals[0] = 1;
-                        rowVals[1] = row - 1;
+                        if (worksheet.Dimension == null)
+                            return;
 
-                        v = "";
+                        int rowCount = worksheet.Dimension.Rows;
+                        int colCount = worksheet.Dimension.Columns;
+      
+
+                        string v = "";
                         for (int i = 1; i <= colCount; i++)
                         {
                             try
                             {
-                                v = worksheet.Cells[row, i]?.Text ?? "";
-                                rowVals[i + 1] = v;
-                                foo.Add(v);
+                                v = worksheet.Cells[1, i]?.Text ?? "";
                             }
                             catch (Exception ex)
                             {
                                 Console.WriteLine(ex.Message);
                             }
+                            table.Columns.Add($"{v}", typeof(string));
                         }
-                        table.Rows.Add(rowVals);
-                    }
 
+                        List<String> foo = new List<String>();
 
-                    string tableName = $"{fileNameWithoutExtension}_{worksheet.Name}";
+                        object[] rowVals = new object[colCount + 2];
 
-                    if (cache.TryGetValue(Helper.ComputeHash(tableName), out DataTable value))
-                    {
-                        if (Helper.DoDatatablesMatch(table, value))
+                        for (int row = 2; row <= rowCount; row++)
                         {
-                            return;
+                            rowVals[0] = 1;
+                            rowVals[1] = row - 1;
+
+                            v = "";
+                            for (int i = 1; i <= colCount; i++)
+                            {
+                                try
+                                {
+                                    v = worksheet.Cells[row, i]?.Text ?? "";
+                                    rowVals[i + 1] = v;
+                                    foo.Add(v);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine(ex.Message);
+                                }
+                            }
+                            table.Rows.Add(rowVals);
                         }
+
+
+                        string tableName = $"{fileNameWithoutExtension}_{worksheet.Name}";
+
+                        if (cache.TryGetValue(Helper.ComputeHash(tableName), out DataTable value))
+                        {
+                            if (Helper.DoDatatablesMatch(table, value))
+                            {
+                                return;
+                            }
+                        }
+                        cache.Add(Helper.ComputeHash(tableName), table);
+
+                        Helper.WriteDatatabletoParquet(table, tableName, config);
+
+                        Helper.CopyChangesToOnelake(config);
                     }
-                    cache.Add(Helper.ComputeHash(tableName), table);
-
-                    Helper.WriteDatatabletoParquet(table, tableName, config);
-
-                    Helper.CopyChangesToOnelake(config);
                 }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"Excel document could be empty {ex.Message}");
             }
         }
     }

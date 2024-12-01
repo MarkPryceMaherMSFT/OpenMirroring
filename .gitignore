@@ -1,0 +1,12 @@
+
+ExcelDemo/AppConfig.json
+*.xlsx
+*.parquet
+*.json
+ExcelDemo/AppConfig.json
+/ExcelDemo/.vs
+/ExcelDemo/bin
+/ExcelDemo/obj
+ExcelDemo/AppConfig.json
+ExcelDemo/copy_files_tmp.ps1
+ExcelDemo/AppConfig.json

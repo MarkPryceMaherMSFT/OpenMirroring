@@ -7,7 +7,7 @@ class Program
     public static AppConfig config = null;
     static void Main(string[] args)
     {
-        var AppConfigPath = @"C:\temp\di\OpenMirroring\ExcelDemo\AppConfig.json";
+        var AppConfigPath = @"C:\source\OpenMirroring\OpenMirroring\ExcelDemo\AppConfig.json";
 
         string jsonString = File.ReadAllText(AppConfigPath);
 
