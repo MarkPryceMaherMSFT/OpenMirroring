@@ -78,7 +78,7 @@ namespace ExcelDemo
                         }
 
 
-                        string tableName = $"{fileNameWithoutExtension}_{worksheet.Name}";
+                        string tableName = $"{fileNameWithoutExtension}.schema\\{worksheet.Name}";
 
                         if (cache.TryGetValue(Helper.ComputeHash(tableName), out DataTable value))
                         {
